@@ -42,24 +42,24 @@ class A2CAgent:
 		self.num_agents = self.env.n
 		self.num_actions = self.env.action_space[0].n
 
-		if self.env_name == "paired_by_sharing_goals":
+		if self.env_name == "paired_by_switching_goals":
 			obs_dim = 2*4
-			self.critic_network = GATCritic(obs_dim, 128, obs_dim+self.num_actions, 128, 128, 1, self.num_agents, self.num_actions).to(self.device)
+			self.critic_network = GATCritic(obs_dim, 128, obs_dim+self.num_actions, 128, 128, 1, self.num_agents, self.num_actions, self.device).to(self.device)
 		elif self.env_name == "crossing_greedy":
 			obs_dim = 2*3
-			self.critic_network = GATCritic(obs_dim, 128, obs_dim+self.num_actions, 128, 128, 1, self.num_agents, self.num_actions).to(self.device)
+			self.critic_network = GATCritic(obs_dim, 128, obs_dim+self.num_actions, 128, 128, 1, self.num_agents, self.num_actions, self.device).to(self.device)
 		elif self.env_name == "crossing_fully_coop":
 			obs_dim = 2*3
-			self.critic_network = DualGATCritic(obs_dim, 128, obs_dim+self.num_actions, 128, 128, 1, self.num_agents, self.num_actions).to(self.device)
+			self.critic_network = DualGATCritic(obs_dim, 128, obs_dim+self.num_actions, 128, 128, 1, self.num_agents, self.num_actions, self.device).to(self.device)
 		elif self.env_name == "color_social_dilemma":
 			obs_dim = 2*2 + 1 + 2*3
-			self.critic_network = GATCritic(obs_dim, 128, obs_dim+self.num_actions, 128, 128, 1, self.num_agents, self.num_actions).to(self.device)
+			self.critic_network = GATCritic(obs_dim, 128, obs_dim+self.num_actions, 128, 128, 1, self.num_agents, self.num_actions, self.device).to(self.device)
 		elif self.env_name == "crossing_partially_coop":
 			obs_dim = 2*3 + 1
-			self.critic_network = DualGATCritic(obs_dim, 128, obs_dim+self.num_actions, 128, 128, 1, self.num_agents, self.num_actions).to(self.device)
+			self.critic_network = DualGATCritic(obs_dim, 128, obs_dim+self.num_actions, 128, 128, 1, self.num_agents, self.num_actions, self.device).to(self.device)
 		
 		
-		if self.env_name in ["paired_by_sharing_goals", "crossing_greedy", "crossing_fully_coop"]:
+		if self.env_name in ["paired_by_switching_goals", "crossing_greedy", "crossing_fully_coop"]:
 			obs_dim = 2*3
 		elif self.env_name in ["color_social_dilemma"]:
 			obs_dim = 2*2 + 1 + 2*3
@@ -67,21 +67,7 @@ class A2CAgent:
 			obs_dim = 2*3 + 1
 
 		# MLP POLICY
-		self.policy_network = MLPPolicyNetwork(obs_dim, self.num_agents, self.num_actions).to(self.device)
-
-
-		if self.env_name == "color_social_dilemma":
-			self.relevant_set = torch.zeros(self.num_agents, self.num_agents).to(self.device)
-			for i in range(self.num_agents):
-				self.relevant_set[i][i] = 1
-				if i < self.num_agents//2:
-					for j in range(self.num_agents//2, self.num_agents):
-						self.relevant_set[i][j] = 1
-				else:
-					for j in range(0,self.num_agents//2):
-						self.relevant_set[i][j] = 1
-
-			self.relevant_set = torch.transpose(self.relevant_set,0,1)
+		self.policy_network = MLPPolicyNetwork(obs_dim, self.num_agents, self.num_actions, self.device).to(self.device)
 
 
 		self.greedy_policy = torch.zeros(self.num_agents,self.num_agents).to(self.device)

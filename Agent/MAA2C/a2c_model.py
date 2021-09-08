@@ -8,12 +8,12 @@ import math
 
 
 class MLPPolicyNetwork(nn.Module):
-	def __init__(self,state_dim,num_agents,action_dim):
+	def __init__(self,state_dim,num_agents,action_dim,device):
 		super(MLPPolicyNetwork,self).__init__()
 
 		self.state_dim = state_dim
 		self.num_agents = num_agents		
-		self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+		self.device = device
 
 
 		self.fc1 = nn.Linear(state_dim*num_agents,128)
@@ -43,12 +43,12 @@ class MLPPolicyNetwork(nn.Module):
 
 
 class GATCritic(nn.Module):
-	def __init__(self, obs_input_dim, obs_output_dim, obs_act_input_dim, obs_act_output_dim, final_input_dim, final_output_dim, num_agents, num_actions):
+	def __init__(self, obs_input_dim, obs_output_dim, obs_act_input_dim, obs_act_output_dim, final_input_dim, final_output_dim, num_agents, num_actions, device):
 		super(GATCritic, self).__init__()
 		
 		self.num_agents = num_agents
 		self.num_actions = num_actions
-		self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+		self.device = device
 
 		self.state_embed = nn.Sequential(nn.Linear(obs_input_dim, 128), nn.LeakyReLU())
 		self.key_layer = nn.Linear(128, obs_output_dim, bias=False)
@@ -132,12 +132,12 @@ class GATCritic(nn.Module):
 
 
 class DualGATCritic(nn.Module):
-	def __init__(self, obs_input_dim, obs_output_dim, obs_act_input_dim, obs_act_output_dim, final_input_dim, final_output_dim, num_agents, num_actions):
+	def __init__(self, obs_input_dim, obs_output_dim, obs_act_input_dim, obs_act_output_dim, final_input_dim, final_output_dim, num_agents, num_actions, device):
 		super(DualGATCritic, self).__init__()
 		
 		self.num_agents = num_agents
 		self.num_actions = num_actions
-		self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+		self.device = device
 
 		self.state_embed_preproc = nn.Sequential(nn.Linear(obs_input_dim, 128), nn.LeakyReLU())
 		self.key_layer_preproc = nn.Linear(128, obs_output_dim, bias=False)
