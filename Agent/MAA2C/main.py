@@ -2,6 +2,7 @@ from maa2c import MAA2C
 
 from multiagent.environment import MultiAgentEnv
 import multiagent.scenarios as scenarios
+import argparse
 
 def make_env(scenario_name, benchmark=False):
 	scenario = scenarios.load(scenario_name + ".py").Scenario()
@@ -20,111 +21,54 @@ def run_file(dictionary):
 
 
 if __name__ == '__main__':
+	
+	parser = argparse.ArgumentParser(description='PARTIAL REWARD DECOUPLING')
 
-	# color_social_dilemma
-	for i in range(1,6):
-		extension = "run"+str(i)
-		test_num = "color_social_dilemma_8_Agents_50K_policy_eval"
-		env_name = "color_social_dilemma" 
-		experiment_type = "prd_above_threshold_decay" # prd_above_threshold_decay, greedy, shared, prd_above_threshold_ascend, prd_above_threshold_l1_pen_decay
+	# ENVIRONMENT NAMES: crossing_greedy/ crossing_fully_coop /  paired_by_sharing_goals/ crossing_partially_coop/ color_social_dilemma 
+	parser.add_argument("--environment", default="paired_by_sharing_goals", type=str, help='Choose an environment: crossing_greedy/ crossing_fully_coop /  paired_by_sharing_goals/ crossing_partially_coop/ color_social_dilemma') 
+	# EXPERIMENT TYPE: prd/ shared/ greedy
+	parser.add_argument("--experiment_type", default="prd", type=str, help='Choose strategy out of the following: shared/ greedy/ prd')
 
-		dictionary = {
-				"critic_dir": '../../../tests/'+test_num+'/models/'+env_name+'_'+experiment_type+'_'+extension+'/critic_networks/',
-				"actor_dir": '../../../tests/'+test_num+'/models/'+env_name+'_'+experiment_type+'_'+extension+'/actor_networks/',
-				"run_dir":'../../../tests/'+test_num+'/runs/'+env_name+'_'+experiment_type+'_'+extension+'/',
-				"policy_eval_dir":'../../../tests/'+test_num+'/policy_eval/'+env_name+'_'+experiment_type+'_'+extension+'/',
-				"gif_dir": '../../../tests/'+test_num+'/gifs/'+env_name+'_'+experiment_type+'_'+extension+'/',
-				"env": env_name, 
-				"test_num":test_num,
-				"value_lr": 1e-3, 
-				"policy_lr": 8e-5, #1e-4
-				"entropy_pen": 8e-3, 
-				"entropy_pen_min": 8e-3,
-				"l1_pen": 0.0,
-				"critic_entropy_pen": 0.0,
-				"critic_loss_type": "TD_lambda", #MC
-				"gamma": 0.99, 
-				"trace_decay": 0.98,
-				"lambda": 0.8, #0.8
-				"select_above_threshold": 0.01,
-				"threshold_min": 0.0, #0.0001
-				"threshold_max": 0.0,
-				"steps_to_take": 15000,
-				"l1_pen_min": 0.0,
-				"l1_pen_steps_to_take": 0,
-				"top_k": 0,
-				"gif": False,
-				"save_model": True,
-				"eval_policy": True,
-				"save_model_checkpoint": 100,
-				"save_tensorboard_plot": False,
-				"save_comet_ml_plot": True,
-				"learn":True,
-				"max_episodes": 50000,
-				"max_time_steps": 100,
-				"experiment_type": experiment_type,
-				"gif_checkpoint":1,
-				"gae": True,
-				"norm_adv": False,
-				"norm_rew": False,
-			}
-		env = make_env(scenario_name=dictionary["env"],benchmark=False)
-		ma_controller = MAA2C(env,dictionary)
-		ma_controller.run()
+	parser.add_argument("--save_model", default=False , type=bool, help='Set "True" to save models')
+	parser.add_argument("--save_model_checkpoint", default=1000, type=int, , help='Enter number of episodes')
+	parser.add_argument("--save_tensorboard_plot", default=False, type=bool, help='Set "True" to save tensorboard plots')
+	parser.add_argument("--save_comet_ml_plot", default=False, type=bool, help='Set "True" to save comet_ml plots')
+	parser.add_argument("--learn", default=True , type=bool, help='Set "True" to allow backprop')
+	parser.add_argument("--save_gif", default=False , type=bool, , help='Set "True" to generate gifs')
+	parser.add_argument("--gif_checkpoint", default= 1, type=int, help='Enter number of episodes')
+	parser.add_argument("--norm_adv", default= False, type=bool, help='Set "True" to normalise advantages')
+	parser.add_argument("--norm_rew", default= False, type=bool, help='Set "True" to normalise reward signal')
+	parser.add_argument("--gae", default= True, type=bool, help='Set "True" to use GAE for Advantage calculations')
 
+	parser.add_argument("--critic_dir", default="../../../critic_networks/", type=str, help='Path to save critic network models')
+	parser.add_argument("--actor_dir", default="../../../actor_networks/", type=str, help='Path to save actor network models')
+	parser.add_argument("--tensorboard_dir", default="../../../tensorboard/", type=str, help='Path to save tensorboard files')
+	parser.add_argument("--gif_dir", default="../../../gifs/", type=str, help='Path to save gifs')
 
-	# crossing_greedy/ crossing_fully_coop /  paired_by_sharing_goals/ crossing_partially_coop
-	# for i in range(1,6):
-	# 	extension = "run"+str(i)
-	# 	test_num = "team_crossing_8_agents_pen_non_colliding_team_members_dualgat_policy_eval" #crossing_8_agents_pen_non_colliding_agents_policy_eval
-	# 	env_name = "crossing_partially_coop"
-	# 	experiment_type = "prd_above_threshold_ascend" # prd_above_threshold_decay_episodic, greedy, shared
+	parser.add_argument("--max_episodes", default=200000, type=int, help='Enter number of episodes to run')
+	parser.add_argument("--max_time_steps", default=4, type=int, help='Enter number of timesteps to roll an episode')
+	parser.add_argument("--value_lr", default=1e-2, type=float, help='Enter critic learning rate')
+	parser.add_argument("--policy_lr", default=1e-3, type=float, help='Enter policy learning rate')
+	parser.add_argument("--entropy_pen", default=1e-3, type=float, help='Enter entropy penalty coefficient')
+	parser.add_argument("--gae_lambda", default=0.98, type=float, help='Enter lambda for gae')
+	parser.add_argument("--gamma", default=0.99, type=float, help='Enter discount factor')
+	parser.add_argument("--select_above_threshold", default=0.0, type=float, help='Enter starting threshold value for prd')
+	parser.add_argument("--threshold_max", default=0.01, type=float, help='Enter final threshold value for prd')
+	parser.add_argument("--steps_to_take", default=15000, type=int, help='Enter number of episodes to linearly increase the threshold from initial value to final value')
+	parser.add_argument("--td_lambda", default= 0.8, type=float, help='Enter TD lambda value')
+	parser.add_argument("--critic_loss_type", default= "TD_lambda", type=str, help='Choose target value type: MC/ TD_lambda/ TD_1')
+	
+	
+	parser.add_argument("--load_models", default= False, type=bool, help='Set "True" to load models')
+	parser.add_argument("--critic_saved_path", default= "../../../critic_networks/critic.pt", type=str, help='Enter critic model path')
+	parser.add_argument("--actor_saved_path", default= "../../../actor.pt", type=str, help='Enter actor model path')
 
-	# 	dictionary = {
-	# 			"critic_dir": '../../../tests/'+test_num+'/models/'+env_name+'_'+experiment_type+'_'+extension+'/critic_networks/',
-	# 			"actor_dir": '../../../tests/'+test_num+'/models/'+env_name+'_'+experiment_type+'_'+extension+'/actor_networks/',
-	# 			"run_dir":'../../../tests/'+test_num+'/runs/'+env_name+'_'+experiment_type+'_'+extension+'/',
-	# 			"gif_dir": '../../../tests/'+test_num+'/gifs/'+env_name+'_'+experiment_type+'_'+extension+'/',
-	# 			"policy_eval_dir":'../../../tests/'+test_num+'/policy_eval/'+env_name+'_'+experiment_type+'_'+extension+'/',
-	# 			"env": env_name, 
-	# 			"test_num":test_num,
-	# 			"extension":extension,
-	# 			"value_lr": 1e-3, 
-	# 			"policy_lr": 1e-4,
-	# 			"entropy_pen": 8e-3, 
-	# 			"entropy_pen_min": 1e-3,
-	# 			"l1_pen": 0.0,
-	# 			"critic_entropy_pen": 0.0,
-	# 			"critic_loss_type": "TD_lambda",
-	# 			"gamma": 0.99, 
-	# 			"trace_decay": 0.98,
-	# 			"lambda": 0.8, #0.8
-	# 			"select_above_threshold": 0.0,
-	# 			"threshold_min": 0.0, 
-	# 			"threshold_max": 0.01,
-	# 			"steps_to_take": 15000, 
-	# 			"l1_pen_min": 0.0,
-	# 			"l1_pen_steps_to_take": 0,
-	# 			"top_k": 0,
-	# 			"gif": False,
-	# 			"eval_policy": True,
-	# 			"save_model": True,
-	# 			"save_model_checkpoint": 1000,
-	# 			"save_tensorboard_plot": False,
-	# 			"save_comet_ml_plot": True,
-	# 			"learn":True,
-	# 			"max_episodes": 200000,
-	# 			"max_time_steps": 100,
-	# 			"experiment_type": experiment_type,
-	# 			"gif_checkpoint":1,
-	# 			"gae": True,
-	# 			"norm_adv": False,
-	# 			"norm_rew": False,
-	# 		}
-	# 	env = make_env(scenario_name=dictionary["env"],benchmark=False)
-	# 	ma_controller = MAA2C(env,dictionary)
-	# 	ma_controller.run()
+	parser.add_argument("--device", default="cuda", type=str, help='Choose device to train on: cpu/ cuda')
+	
+	
 
+	arguments = parser.parse_args()
 
-# export CUDA_VISIBLE_DEVICES=1
-# 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
+	env = make_env(scenario_name=argument.environment,benchmark=False)
+	ma_controller = MAA2C(env,arguments)
+	ma_controller.run()
